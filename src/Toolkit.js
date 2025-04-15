@@ -127,12 +127,43 @@ Ext.apply(Ext.form.field.VTypes, {
     CpuSetText: gettext('This is not a valid CpuSet'),
 
     DnsName: function(v) {
-	return Proxmox.Utils.DnsName_match.test(v);
+        // 支持中文输入，先尝试转换为 punycode
+        try {
+            if (v && /[\u4e00-\u9fa5]/.test(v)) {
+                // 检测是否包含中文字符
+                const punycodeValue = punycodeObj.toASCII(v);
+                return Proxmox.Utils.DnsName_match.test(punycodeValue);
+            }
+        } catch (e) {
+            console.warn('Punycode conversion failed:', e);
+        }
+        // 如果不包含中文或转换失败，使用原始验证逻辑
+	    return Proxmox.Utils.DnsName_match.test(v);
     },
     DnsNameText: gettext('This is not a valid hostname'),
 
     DnsNameOrWildcard: function(v) {
-	return Proxmox.Utils.DnsName_or_Wildcard_match.test(v);
+        // 支持中文输入，先尝试转换为 punycode
+        try {
+            if (v && /[\u4e00-\u9fa5]/.test(v)) {
+                // 检测是否包含中文字符
+                // 处理可能的通配符部分
+                const parts = v.split('.');
+                const convertedParts = parts.map(part => {
+                    // 只转换非通配符的部分
+                    if (part === '*') {
+                        return part;
+                    }
+                    return punycodeObj.toASCII(part);
+                });
+                const punycodeValue = convertedParts.join('.');
+                return Proxmox.Utils.DnsName_or_Wildcard_match.test(punycodeValue);
+            }
+        } catch (e) {
+            console.warn('Punycode conversion failed:', e);
+        }
+        // 如果不包含中文或转换失败，使用原始验证逻辑
+	    return Proxmox.Utils.DnsName_or_Wildcard_match.test(v);
     },
     DnsNameOrWildcardText: gettext('This is not a valid hostname'),
 
@@ -143,6 +174,18 @@ Ext.apply(Ext.form.field.VTypes, {
     proxmoxMailText: gettext('Example') + ": user@example.com",
 
     DnsOrIp: function(v) {
+        // 支持中文输入，先尝试转换为 punycode
+        try {
+            if (v && /[\u4e00-\u9fa5]/.test(v)) {
+                // 检测是否包含中文字符
+                const punycodeValue = punycodeObj.toASCII(v);
+                return Proxmox.Utils.DnsName_match.test(punycodeValue) || 
+                       Proxmox.Utils.IP64_match.test(v);
+            }
+        } catch (e) {
+            console.warn('Punycode conversion failed:', e);
+        }
+        // 如果不包含中文或转换失败，使用原始验证逻辑
 	if (!Proxmox.Utils.DnsName_match.test(v) &&
 	    !Proxmox.Utils.IP64_match.test(v)) {
 	    return false;
@@ -153,6 +196,24 @@ Ext.apply(Ext.form.field.VTypes, {
     DnsOrIpText: gettext('Not a valid DNS name or IP address.'),
 
     HostPort: function(v) {
+        // 支持中文输入，先尝试转换为 punycode
+        try {
+            if (v && /[\u4e00-\u9fa5]/.test(v)) {
+                // 检测是否包含中文字符
+                // 分离域名和端口号
+                let [hostname, port] = v.split(':');
+                if (hostname) {
+                    const punycodeHostname = punycodeObj.toASCII(hostname);
+                    const punycodeValue = port ? `${punycodeHostname}:${port}` : punycodeHostname;
+                    return Proxmox.Utils.HostPort_match.test(punycodeValue) ||
+                        Proxmox.Utils.HostPortBrackets_match.test(punycodeValue) ||
+                        Proxmox.Utils.IP6_dotnotation_match.test(punycodeValue);
+                }
+            }
+        } catch (e) {
+            console.warn('Punycode conversion failed:', e);
+        }
+        // 如果不包含中文或转换失败，使用原始验证逻辑
 	return Proxmox.Utils.HostPort_match.test(v) ||
 		Proxmox.Utils.HostPortBrackets_match.test(v) ||
 		Proxmox.Utils.IP6_dotnotation_match.test(v);
@@ -162,6 +223,47 @@ Ext.apply(Ext.form.field.VTypes, {
     HostList: function(v) {
 	let list = v.split(/[ ,;]+/);
 	let i;
+        
+        // 支持中文输入，先尝试转换为 punycode
+        try {
+            // 检查是否有任何一项包含中文
+            if (v && /[\u4e00-\u9fa5]/.test(v)) {
+                // 依次处理每个主机项
+                for (i = 0; i < list.length; i++) {
+                    if (list[i] === '') {
+                        continue;
+                    }
+                    
+                    // 如果包含中文，转换为 punycode
+                    if (/[\u4e00-\u9fa5]/.test(list[i])) {
+                        // 分离主机名和端口号
+                        let [hostname, port] = list[i].split(':');
+                        if (hostname) {
+                            const punycodeHostname = punycodeObj.toASCII(hostname);
+                            const punycodeValue = port ? `${punycodeHostname}:${port}` : punycodeHostname;
+                            
+                            if (!Proxmox.Utils.HostPort_match.test(punycodeValue) &&
+                                !Proxmox.Utils.HostPortBrackets_match.test(punycodeValue) &&
+                                !Proxmox.Utils.IP6_dotnotation_match.test(punycodeValue)) {
+                                return false;
+                            }
+                        }
+                    } else {
+                        // 使用原始验证逻辑
+                        if (!Proxmox.Utils.HostPort_match.test(list[i]) &&
+                            !Proxmox.Utils.HostPortBrackets_match.test(list[i]) &&
+                            !Proxmox.Utils.IP6_dotnotation_match.test(list[i])) {
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
+        } catch (e) {
+            console.warn('Punycode conversion failed:', e);
+        }
+        
+        // 如果不包含中文或转换失败，使用原始验证逻辑
 	for (i = 0; i < list.length; i++) {
 	    if (list[i] === '') {
 		continue;
