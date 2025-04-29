@@ -422,7 +422,7 @@ utilities: {
 	    let error = request._operation.getError();
 	    let msg = Proxmox.Utils.getResponseErrorMessage(error);
 	    if (!errorCallback || !errorCallback(error, msg)) {
-		Proxmox.Utils.setErrorMask(component, msg);
+		Proxmox.Utils.setErrorMask(component, Ext.htmlEncode(msg));
 	    }
 	});
     },
@@ -516,7 +516,7 @@ utilities: {
 		    } else if (response.status && response.statusText) {
 			msg = gettext('Connection error') + ' ' + response.status + ': ' + response.statusText;
 		    }
-		    response.htmlStatus = msg;
+		    response.htmlStatus = Ext.htmlEncode(msg);
 		    Ext.callback(callbackFn, options.scope, [options, false, response]);
 		    Ext.callback(failureFn, options.scope, [response, options]);
 		},
@@ -808,7 +808,7 @@ utilities: {
 	let type = task.type || task.worker_type;
 	let id = task.id || task.worker_id;
 
-	return Proxmox.Utils.format_task_description(type, id);
+	return Ext.htmlEncode(Proxmox.Utils.format_task_description(type, id));
     },
 
     render_uptime: function(value) {
