@@ -1,11 +1,12 @@
 include ../defines.mk
 
-IMAGES=pmx-clear-trigger.png		\
-       openid-icon-100x100.png		\
+IMAGES=pmx-clear-trigger.svg		\
+       openid-icon.svg			\
        icon-cpu.svg			\
        icon-ram.svg			\
        debian-swirl-openlogo.svg	\
        proxmox-symbol-x.svg		\
+       spinner.svg			\
 
 all:
 

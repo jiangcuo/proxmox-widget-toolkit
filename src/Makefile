@@ -1,6 +1,6 @@
 include defines.mk
 
-ESLINT ?= $(if $(shell command -v pve-eslint), pve-eslint, eslint)
+BIOME ?= proxmox-biome
 
 SUBDIRS= css images proxmox-dark
 
