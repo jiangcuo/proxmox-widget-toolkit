@@ -213,6 +213,11 @@ div.right-aligned {
     background-size: 16px 16px; /* Not really required here, as here WxH is 1:1 but cannot hurt */
     background-image: url(../images/proxmox-symbol-x.svg);
 }
+.pmx-itype-icon-lierfang {
+    padding-left: 22px;
+    background-size: 16px 16px;
+    background-image: url(../images/lierfang-symbol.svg);
+}
 
 .pmx-itype-icon-openid-logo {
     padding-left: 22px;

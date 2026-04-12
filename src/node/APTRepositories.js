@@ -162,6 +162,7 @@ Ext.define('Proxmox.node.APTRepositoriesGrid', {
             text: gettext('Add'),
             name: 'addRepo',
             disabled: true,
+            hidden: true,
             repoInfo: undefined,
             cbind: {
                 onlineHelp: '{onlineHelp}',
@@ -347,8 +348,13 @@ Ext.define('Proxmox.node.APTRepositoriesGrid', {
                     value = gettext('Other');
                 }
                 let cls = 'fa fa-fw fa-question-circle-o';
-                let originType = this.up('proxmoxNodeAPTRepositories').classifyOrigin(value);
-                if (originType === 'Proxmox') {
+                let originType = this.up('proxmoxNodeAPTRepositories').classifyOrigin(value, rec.data.URIs);
+                if (originType === 'Lierfang') {
+                    cls = 'pmx-itype-icon pmx-itype-icon-lierfang';
+                    if (value === gettext('Other') || value === Proxmox.Utils.unknownText) {
+                        value = 'Lierfang';
+                    }
+                } else if (originType === 'Proxmox') {
                     cls = 'pmx-itype-icon pmx-itype-icon-proxmox-x';
                 } else if (originType === 'Debian') {
                     cls = 'pmx-itype-icon pmx-itype-icon-debian-swirl';
@@ -404,14 +410,20 @@ Ext.define('Proxmox.node.APTRepositories', {
 
     onlineHelp: undefined,
 
-    product: 'Proxmox VE', // default
+    product: 'Pxvirt', // default
 
-    classifyOrigin: function (origin) {
+    classifyOrigin: function (origin, uris) {
         origin ||= '';
-        if (origin.match(/^\s*Proxmox\s*$/i)) {
+        if (origin.match(/lierfang\.com/i)) {
+            return 'Lierfang';
+        } else if (origin.match(/^\s*Proxmox\s*$/i)) {
             return 'Proxmox';
         } else if (origin.match(/^\s*Debian\s*(:?Backports)?$/i)) {
             return 'Debian';
+        }
+        // fallback: check URIs when Origin is missing
+        if (uris && uris.some((u) => u.match(/lierfang\.com/i))) {
+            return 'Lierfang';
         }
         return 'Other';
     },
@@ -437,7 +449,7 @@ Ext.define('Proxmox.node.APTRepositories', {
             let store = vm.get('errorstore');
             store.removeAll();
 
-            let status = 'good'; // start with best, the helper below will downgrade if needed
+            let status = 'good';
             let text = gettext('All OK, you have production-ready repositories configured!');
 
             let addGood = (message) => store.add({ status: 'good', message });
@@ -457,35 +469,10 @@ Ext.define('Proxmox.node.APTRepositories', {
             let errors = vm.get('errors');
             errors.forEach((error) => addCritical(`${error.path} - ${error.error}`));
 
-            let activeSubscription = vm.get('subscriptionActive');
-            let enterprise = vm.get('enterpriseRepo');
-            let nosubscription = vm.get('noSubscriptionRepo');
-            let test = vm.get('testRepo');
-            let cephRepos = {
-                enterprise: vm.get('cephEnterpriseRepo'),
-                nosubscription: vm.get('cephNoSubscriptionRepo'),
-                test: vm.get('cephTestRepo'),
-            };
             let wrongSuites = vm.get('suitesWarning');
             let mixedSuites = vm.get('mixedSuites');
 
-            if (!enterprise && !nosubscription && !test) {
-                addCritical(
-                    Ext.String.format(
-                        gettext('No {0} repository is enabled, you do not get any updates!'),
-                        vm.get('product'),
-                    ),
-                );
-            } else if (errors.length > 0) {
-                // nothing extra, just avoid that we show "get updates"
-            } else if (enterprise && !nosubscription && !test && activeSubscription) {
-                addGood(
-                    Ext.String.format(
-                        gettext('You get supported updates for {0}'),
-                        vm.get('product'),
-                    ),
-                );
-            } else if (nosubscription || test) {
+            if (errors.length === 0) {
                 addGood(Ext.String.format(gettext('You get updates for {0}'), vm.get('product')));
             }
 
@@ -496,46 +483,6 @@ Ext.define('Proxmox.node.APTRepositories', {
             if (mixedSuites) {
                 addWarn(gettext('Detected mixed suites before upgrade'));
             }
-
-            let productionReadyCheck = (repos, type, noSubAlternateName) => {
-                if (!activeSubscription && repos.enterprise) {
-                    addWarn(
-                        Ext.String.format(
-                            gettext(
-                                'The {0}enterprise repository is enabled, but there is no active subscription!',
-                            ),
-                            type,
-                        ),
-                    );
-                }
-
-                if (repos.nosubscription) {
-                    addWarn(
-                        Ext.String.format(
-                            gettext(
-                                'The {0}no-subscription{1} repository is not recommended for production use!',
-                            ),
-                            type,
-                            noSubAlternateName,
-                        ),
-                    );
-                }
-
-                if (repos.test) {
-                    addWarn(
-                        Ext.String.format(
-                            gettext(
-                                'The {0}test repository may pull in unstable updates and is not recommended for production use!',
-                            ),
-                            type,
-                        ),
-                    );
-                }
-            };
-
-            productionReadyCheck({ enterprise, nosubscription, test }, '', '');
-            // TODO drop alternate 'main' name when no longer relevant
-            productionReadyCheck(cephRepos, 'Ceph ', '/main');
 
             if (errors.length > 0) {
                 text = gettext('Fatal parsing error for at least one repository');
@@ -552,17 +499,10 @@ Ext.define('Proxmox.node.APTRepositories', {
 
     viewModel: {
         data: {
-            product: 'Proxmox VE', // default
+            product: 'Pxvirt', // default
             errors: [],
             suitesWarning: false,
             mixedSuites: false, // used before major upgrade
-            subscriptionActive: '',
-            noSubscriptionRepo: '',
-            enterpriseRepo: '',
-            testRepo: '',
-            cephEnterpriseRepo: '',
-            cephNoSubscriptionRepo: '',
-            cephTestRepo: '',
             selectionenabled: false,
             state: {},
         },
@@ -639,57 +579,12 @@ Ext.define('Proxmox.node.APTRepositories', {
     ],
 
     check_subscription: function () {
-        let me = this;
-        let vm = me.getViewModel();
-
-        Proxmox.Utils.API2Request({
-            url: `/nodes/${me.nodename}/subscription`,
-            method: 'GET',
-            failure: (response, opts) => Ext.Msg.alert(gettext('Error'), response.htmlStatus),
-            success: function (response, opts) {
-                const res = response.result;
-                const subscription = !(
-                    !res ||
-                    !res.data ||
-                    res.data.status.toLowerCase() !== 'active'
-                );
-                vm.set('subscriptionActive', subscription);
-                me.getController().updateState();
-            },
-        });
+        // pxvirt: no subscription check needed
     },
 
     updateStandardRepos: function (standardRepos) {
         let me = this;
-        let vm = me.getViewModel();
-
-        let addButton = me.down('button[name=addRepo]');
-
-        addButton.repoInfo = [];
-        for (const standardRepo of standardRepos) {
-            const handle = standardRepo.handle;
-            const status = standardRepo.status;
-
-            if (handle === 'enterprise') {
-                vm.set('enterpriseRepo', status);
-            } else if (handle === 'no-subscription') {
-                vm.set('noSubscriptionRepo', status);
-            } else if (handle === 'test') {
-                vm.set('testRepo', status);
-            } else if (handle.match(/^ceph-[a-zA-Z]+-enterprise$/)) {
-                vm.set('cephEnterpriseRepo', status);
-            } else if (handle.match(/^ceph-[a-zA-Z]+-no-subscription$/)) {
-                vm.set('cephNoSubscriptionRepo', status);
-            } else if (handle.match(/^ceph-[a-zA-Z]+-test$/)) {
-                vm.set('cephTestRepo', status);
-            }
-            me.getController().updateState();
-
-            addButton.repoInfo.push(standardRepo);
-            addButton.digest = me.digest;
-        }
-
-        addButton.setDisabled(false);
+        me.getController().updateState();
     },
 
     reload: function () {
@@ -760,7 +655,7 @@ Ext.define('Proxmox.node.APTRepositories', {
                                     suitesWarning = true;
                                 }
 
-                                let originType = me.classifyOrigin(repo.Origin);
+                                let originType = me.classifyOrigin(repo.Origin, repo.URIs);
                                 // Only Proxmox and Debian repositories checked here, because the
                                 // warning can be missing for others for a different reason (e.g.
                                 // using 'stable' or non-Debian code names).
