@@ -145,12 +145,12 @@ Ext.apply(Ext.form.field.VTypes, {
     CpuSetText: gettext('This is not a valid CpuSet'),
 
     DnsName: function (v) {
-        return Proxmox.Utils.DnsName_match.test(v);
+        return Proxmox.Utils.DnsName_match.test(Proxmox.Utils.domainToAscii(v));
     },
     DnsNameText: gettext('This is not a valid hostname'),
 
     DnsNameOrWildcard: function (v) {
-        return Proxmox.Utils.DnsName_or_Wildcard_match.test(v);
+        return Proxmox.Utils.DnsName_or_Wildcard_match.test(Proxmox.Utils.domainToAscii(v));
     },
     DnsNameOrWildcardText: gettext('This is not a valid hostname'),
 
@@ -161,7 +161,8 @@ Ext.apply(Ext.form.field.VTypes, {
     proxmoxMailText: gettext('Example') + ': user@example.com',
 
     DnsOrIp: function (v) {
-        if (!Proxmox.Utils.DnsName_match.test(v) && !Proxmox.Utils.IP64_match.test(v)) {
+        let ascii = Proxmox.Utils.domainToAscii(v);
+        if (!Proxmox.Utils.DnsName_match.test(ascii) && !Proxmox.Utils.IP64_match.test(ascii)) {
             return false;
         }
 
@@ -170,10 +171,11 @@ Ext.apply(Ext.form.field.VTypes, {
     DnsOrIpText: gettext('Not a valid DNS name or IP address.'),
 
     HostPort: function (v) {
+        let ascii = Proxmox.Utils.hostPortToAscii(v);
         return (
-            Proxmox.Utils.HostPort_match.test(v) ||
-            Proxmox.Utils.HostPortBrackets_match.test(v) ||
-            Proxmox.Utils.IP6_dotnotation_match.test(v)
+            Proxmox.Utils.HostPort_match.test(ascii) ||
+            Proxmox.Utils.HostPortBrackets_match.test(ascii) ||
+            Proxmox.Utils.IP6_dotnotation_match.test(ascii)
         );
     },
     HostPortText: gettext('Host/IP address or optional port is invalid'),
@@ -186,10 +188,11 @@ Ext.apply(Ext.form.field.VTypes, {
                 continue;
             }
 
+            let ascii = Proxmox.Utils.hostPortToAscii(list[i]);
             if (
-                !Proxmox.Utils.HostPort_match.test(list[i]) &&
-                !Proxmox.Utils.HostPortBrackets_match.test(list[i]) &&
-                !Proxmox.Utils.IP6_dotnotation_match.test(list[i])
+                !Proxmox.Utils.HostPort_match.test(ascii) &&
+                !Proxmox.Utils.HostPortBrackets_match.test(ascii) &&
+                !Proxmox.Utils.IP6_dotnotation_match.test(ascii)
             ) {
                 return false;
             }
