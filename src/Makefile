@@ -152,6 +152,7 @@ proxmoxlib.min.js: proxmoxlib.js
 install: proxmoxlib.js proxmoxlib.min.js
 	install -d -m 755 $(WWWBASEDIR)
 	install -m 0644 proxmoxlib.js proxmoxlib.min.js $(WWWBASEDIR)
+	install -m 0644 punycode.min.js $(WWWBASEDIR)/punycode.min.js
 	set -e && for i in $(SUBDIRS); do $(MAKE) -C $$i $@; done
 
 .PHONY: clean

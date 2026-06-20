@@ -1572,6 +1572,48 @@ Ext.define('Proxmox.Utils', {
             }
             hiddenElement.click();
         },
+
+        // Internationalized domain name (IDN) support: convert a hostname that
+        // contains non-ASCII characters (e.g. Chinese, German umlauts, emoji)
+        // to its ASCII/punycode ("xn--") form, so it can be matched against the
+        // ASCII-only hostname regexes below. ASCII input is returned unchanged.
+        //
+        // The actual conversion is done by the bundled punycode.js library,
+        // loaded as a separate script and exposed as `window.punycode`. If it is
+        // missing or conversion fails, the original value is returned so that
+        // validation simply falls back to the plain ASCII behavior.
+        domainToAscii: function (v) {
+            // eslint-disable-next-line no-control-regex
+            if (typeof v !== 'string' || !/[^\0-\x7F]/.test(v)) {
+                return v;
+            }
+            let puny = window.punycode;
+            if (!puny) {
+                return v;
+            }
+            try {
+                // toASCII splits on dots/'@' itself and leaves ASCII labels
+                // (including a '*' wildcard label) untouched.
+                return puny.toASCII(v);
+            } catch (e) {
+                console.warn('punycode conversion failed:', e);
+                return v;
+            }
+        },
+
+        // Like domainToAscii(), but for a "host[:port]" token. A value carrying
+        // non-ASCII characters can only be an internationalized hostname, never
+        // a (bracketed) IPv6 address, so we can safely split off a ":port"
+        // suffix and convert just the host part.
+        hostPortToAscii: function (v) {
+            // eslint-disable-next-line no-control-regex
+            if (typeof v !== 'string' || !/[^\0-\x7F]/.test(v)) {
+                return v;
+            }
+            let [host, ...rest] = v.split(':');
+            let ascii = Proxmox.Utils.domainToAscii(host);
+            return rest.length ? `${ascii}:${rest.join(':')}` : ascii;
+        },
     },
 
     singleton: true,
