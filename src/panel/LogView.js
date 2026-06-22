@@ -119,7 +119,9 @@ Ext.define('Proxmox.panel.LogView', {
                         if (first > line.n) {
                             first = line.n;
                         }
-                        lines[line.n - 1] = Ext.htmlEncode(line.t);
+                        lines[line.n - 1] = Ext.htmlEncode(
+                            Proxmox.Utils.decodePunycodeText(line.t),
+                        );
                     });
 
                     me.updateView(lines, first - 1, total);
