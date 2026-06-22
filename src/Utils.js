@@ -1614,6 +1614,29 @@ Ext.define('Proxmox.Utils', {
             let ascii = Proxmox.Utils.domainToAscii(host);
             return rest.length ? `${ascii}:${rest.join(':')}` : ascii;
         },
+
+        // Decode every 'xn--...' token in an arbitrary text body (e.g. a log
+        // line) to its Unicode form, leaving everything else alone. Each token
+        // is decoded independently so one malformed token can't corrupt the
+        // whole line. If window.punycode is missing or a token fails to decode
+        // the original text is preserved.
+        decodePunycodeText: function (text) {
+            if (typeof text !== 'string' || !text || text.indexOf('xn--') === -1) {
+                return text;
+            }
+            let puny = window.punycode;
+            if (!puny) {
+                return text;
+            }
+            return text.replace(/xn--[A-Za-z0-9-]+/g, function (match) {
+                try {
+                    let u = puny.toUnicode(match);
+                    return u || match;
+                } catch (_e) {
+                    return match;
+                }
+            });
+        },
     },
 
     singleton: true,
