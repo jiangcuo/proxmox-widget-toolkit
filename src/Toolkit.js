@@ -806,6 +806,18 @@ Ext.define('Proxmox.grid.column.Date', {
     renderer: undefined,
 });
 
+// Tree columns (used by the resource tree / server view) historically embed
+// pre-built HTML fragments (e.g. the storage 'usage-wrapper' bars). These
+// fragments are produced by trusted code paths; any user-supplied piece (such
+// as VM/storage names) is expected to be escaped at the point it is embedded.
+// Re-applying htmlEncode at the column level here breaks the rendered HTML, so
+// reset the renderer back to undefined for tree columns.
+Ext.define('Proxmox.tree.Column', {
+    override: 'Ext.tree.Column',
+
+    renderer: undefined,
+});
+
 // force alert boxes to be rendered with an Error Icon
 // since Ext.Msg is an object and not a prototype, we need to override it
 // after the framework has been initiated
