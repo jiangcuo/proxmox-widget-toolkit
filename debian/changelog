@@ -1,3 +1,34 @@
+proxmox-widget-toolkit (4.3.16-pxvirt3) bookworm; urgency=medium
+
+  * toolkit: support internationalized (IDN) hostnames via punycode for the
+    DnsName, DnsNameOrWildcard, DnsOrIp, HostPort and HostList vtypes via the
+    new domainToAscii() and hostPortToAscii() helpers. The bundled
+    punycode.js 2.1.0 library (wrapped in an IIFE that only exposes
+    window.punycode) is installed alongside proxmoxlib.js so all Proxmox
+    web UIs can rely on it. Conversion is only used for validation; the
+    value shown and submitted is unchanged, and is a safe fallback if
+    window.punycode is missing or conversion throws.
+
+  * fix resource tree HTML regression introduced between 4.3.14 and 4.3.16:
+    reset the default Ext.htmlEncode renderer for Ext.tree.Column the same
+    way the existing override does for the Check / Boolean / Number / Date
+    typed grid columns. Tree columns historically embed trusted HTML
+    fragments produced by application code (e.g. the storage usage-wrapper
+    bars in the PVE server view), so re-escaping the whole value at the
+    column level breaks the intended rendering.
+
+  * toolkit: add Proxmox.Utils.decodePunycodeText(text) helper that walks
+    an arbitrary text body and decodes every xn--... token in place,
+    leaving everything else untouched. Each token is decoded
+    independently so a single malformed token cannot corrupt the rest of
+    the line; a missing window.punycode or a thrown error falls back to
+    the original token text. panel/LogView.js now passes each log line
+    through this helper before htmlEncode, so node syslog, task output,
+    Ceph log and any other consumer of the shared LogView automatically
+    renders IDN strings as their Unicode form.
+
+ -- liyanglrf <liyang@lierfang.com>  Tue, 23 Jun 2026 12:14:03 +0000
+
 proxmox-widget-toolkit (4.3.16-pxvirt2) bookworm; urgency=medium
 
   *  Use lierfang apt repositories
