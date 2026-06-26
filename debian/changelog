@@ -1,3 +1,15 @@
+proxmox-widget-toolkit (4.3.16-pxvirt2) bookworm; urgency=medium
+
+  * toolkit: add conservative Punycode helpers for IDN validation and log
+    display. Only complete xn-- labels are decoded, with a PVE-specific
+    exception for Copy-of-VM- clone names; embedded ambiguous substrings are
+    left unchanged.
+
+  * toolkit: keep the Ext.tree.Column renderer unset, matching the typed grid
+    column overrides and preserving trusted HTML fragments in resource trees.
+
+ -- jiangcuo <jiangcuo@bingsin.com>  Fri, 26 Jun 2026 10:55:00 +0800
+
 proxmox-widget-toolkit (4.3.16-pxvirt1) bookworm; urgency=medium
 
   *  Use lierfang apt repositories
@@ -1816,4 +1828,3 @@ proxmox-widget-toolkit (1.0-1) unstable; urgency=medium
   * first try
 
  -- Proxmox Support Team <support@proxmox.com>  Mon, 30 Jan 2017 09:50:33 +0100
-
