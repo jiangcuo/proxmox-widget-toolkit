@@ -9,6 +9,7 @@ SUBDIRS= css images proxmox-dark
 MARKEDJS=/usr/share/javascript/marked/marked.js
 
 JSSRC=					\
+	Punycode.js			\
 	Utils.js			\
 	Schema.js			\
 	Toolkit.js			\

@@ -1572,6 +1572,32 @@ Ext.define('Proxmox.Utils', {
             }
             hiddenElement.click();
         },
+
+        domainToAscii: function (value) {
+            return Proxmox.Punycode.encodeDomain(value);
+        },
+
+        hostPortToAscii: function (value) {
+            if (typeof value !== 'string' || !Proxmox.Punycode.hasNonAscii(value)) {
+                return value;
+            }
+
+            if (value.startsWith('[')) {
+                return value;
+            }
+
+            let match = /^([^:]+)(?::(\d+))?$/.exec(value);
+            if (!match) {
+                return value;
+            }
+
+            let host = Proxmox.Punycode.encodeDomain(match[1]);
+            return match[2] === undefined ? host : `${host}:${match[2]}`;
+        },
+
+        decodePunycodeText: function (text) {
+            return Proxmox.Punycode.decodeText(text);
+        },
     },
 
     singleton: true,
