@@ -806,6 +806,12 @@ Ext.define('Proxmox.grid.column.Date', {
     renderer: undefined,
 });
 
+Ext.define('Proxmox.tree.Column', {
+    override: 'Ext.tree.Column',
+
+    renderer: undefined,
+});
+
 // force alert boxes to be rendered with an Error Icon
 // since Ext.Msg is an object and not a prototype, we need to override it
 // after the framework has been initiated
