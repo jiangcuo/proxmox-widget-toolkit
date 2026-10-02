@@ -77,6 +77,26 @@ Ext.define('Proxmox.Schema', {
             ipanel: 'pmxWebhookEditPanel',
             iconCls: 'fa-bell-o',
         },
+        dingtalk: {
+            name: gettext('DingTalk'),
+            ipanel: 'pmxRobotEditPanel',
+            iconCls: 'fa-comments-o',
+        },
+        feishu: {
+            name: gettext('Feishu'),
+            ipanel: 'pmxRobotEditPanel',
+            iconCls: 'fa-comments-o',
+        },
+        wecom: {
+            name: gettext('WeCom'),
+            ipanel: 'pmxRobotEditPanel',
+            iconCls: 'fa-comments-o',
+        },
+        sms: {
+            name: gettext('SMS'),
+            ipanel: 'pmxSmsEditPanel',
+            iconCls: 'fa-mobile',
+        },
     },
 
     // to add or change existing for product specific ones

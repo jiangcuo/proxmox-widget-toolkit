@@ -81,6 +81,8 @@ JSSRC=					\
 	panel/TfaView.js		\
 	panel/NotesView.js		\
 	panel/WebhookEditPanel.js	\
+	panel/RobotEditPanel.js	\
+	panel/SmsEditPanel.js	\
 	window/Edit.js			\
 	window/PasswordEdit.js		\
 	window/SafeDestroy.js		\
