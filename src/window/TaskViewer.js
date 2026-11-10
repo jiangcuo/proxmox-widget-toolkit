@@ -231,13 +231,17 @@ Ext.define('Proxmox.window.TaskViewer', {
             border: false,
         });
 
+        // sosreport tasks collect a diagnostic archive instead of just a log,
+        // so download that archive rather than the task log.
+        let downloadUrl =
+            task.type === 'sosreport'
+                ? `/api2/json/nodes/${task.node}/report?upid=${encodeURIComponent(me.upid)}`
+                : `/api2/json/nodes/${task.node}/tasks/${encodeURIComponent(me.upid)}/log?download=1`;
+
         let downloadBtn = new Ext.Button({
             text: gettext('Download'),
             iconCls: 'fa fa-download',
-            handler: () =>
-                Proxmox.Utils.downloadAsFile(
-                    `/api2/json/nodes/${task.node}/tasks/${encodeURIComponent(me.upid)}/log?download=1`,
-                ),
+            handler: () => Proxmox.Utils.downloadAsFile(downloadUrl),
         });
 
         let logView = Ext.create('Proxmox.panel.LogView', {
